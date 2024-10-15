@@ -1,4 +1,5 @@
 import multiprocessing
+import logging
 import os
 import sys
 import threading
@@ -15,6 +16,10 @@ from ics_sim.connectors import ConnectorFactory
 from multiprocessing import Process
 import logging
 
+logging.basicConfig(level=logging.DEBUG,
+                    filename='app.log',  # Specify your log file's path here
+                    filemode='a',  # 'w' will overwrite the log file each run; 'a' will append to the end of the log file
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 class Physics(ABC):
     @abstractmethod
@@ -37,13 +42,51 @@ class SensorConnector(Physics):
     def add_sensor(self, tag, fault):
         self._sensors[tag] = fault
 
+
     def read(self, tag):
+        #logging.debug(f"Entered read method in ics_sim/device.py with tag: {tag}")
+        #logging.debug(f"Available sensor keys: {list(self._sensors.keys())}")  # Logs all sensor keys
         if tag in self._sensors.keys():
-            value = self._get(tag)
-            value += random.uniform(value, -1 * value) * self._sensors[tag]
-            return value
+            try:
+                # Log the initial values and types to identify issues.
+                #logging.debug(f"trying to get tag: {tag}")
+                initial_value = self._get(tag)
+                #logging.debug(f"tag retreived as: {initial_value}")
+                #logging.debug(f"trying to retreive sensor with sensors[tag]")
+                sensor_value = self._sensors[tag]
+                #logging.debug(f"retreived sensor_value: {sensor_value}")
+                #logging.debug(f"Tag: {tag}, Initial value: {initial_value}, Sensor value: {sensor_value}")
+                #logging.debug(f"Initial value type: {type(initial_value)}, Sensor value type: {type(sensor_value)}")
+
+                # Check if the values are numeric and not empty before converting.
+                """
+                if initial_value == '' or not initial_value.replace('.', '', 1).isdigit():
+                    logging.error(f"Invalid initial value for tag '{tag}': {initial_value}")
+                    return None
+                if sensor_value == '' or not sensor_value.replace('.', '', 1).isdigit():
+                    logging.error(f"Invalid sensor value for tag '{tag}': {sensor_value}")
+                    return None
+                """
+                # Convert values to float to ensure arithmetic operations can be performed.
+                #logging.debug(f"converting {initial_value} to float")
+                value = float(initial_value)
+                #logging.debug(f"new value: {value}")
+                #logging.debug(f"converting {sensor_value} to float")
+                sensor_multiplier = float(sensor_value)
+                #logging.debug(f"new value: {sensor_multiplier}")
+                
+                # Perform the calculation.
+                random_factor = random.uniform(-1 * value, value)
+                value += random_factor * sensor_multiplier
+
+                return value
+            except ValueError as e:
+                logging.error(f"ValueError for tag '{tag}': {e}")
+            except TypeError as e:
+                logging.error(f"TypeError for tag '{tag}': {e}")
+                logging.error(f"Attempted to process: Initial value: {initial_value} ({type(initial_value)}), Sensor value: {sensor_value} ({type(sensor_value)})")
         else:
-            raise LookupError()
+            raise LookupError(f"Tag '{tag}' not found in sensor dictionary.")
 
 
 class ActuatorConnector(Physics):
@@ -247,6 +290,7 @@ class HIL(Runnable, Physics, ABC):
 
 class DcsComponent(Runnable):
     def __init__(self, name, tags, plcs, loop):
+        
         Runnable.__init__(self, name,  loop)
         self.plcs = plcs
         self.tags = tags
@@ -254,8 +298,13 @@ class DcsComponent(Runnable):
         self.__init_clients()
 
     def __init_clients(self):
+        #logging.debug(f"entered method _init_clients on file ics_sim/Device.py ")
         for plc_id in self.plcs:
+            #logging.debug(f"retreiving plc id {plc_id}")
             plc = self.plcs[plc_id]
+            #logging.debug(f"retreived plc id {plc}")
+            #logging.debug(f"Attempting to create Modbus client at IP: {plc['ip']} and Port: {plc['port']}")
+
             self.clients[plc_id] = (ProtocolFactory.create_client(plc['protocol'], plc['ip'], plc['port']))
 
     def _send(self, tag, value):
@@ -365,19 +414,34 @@ class PLC(DcsComponent):
             if self._is_output_tag(tag):
                 self._actuator_connector.add_actuator(tag)
 
-    def _get(self, tag):
-        if self._is_local_tag(tag):
+    import logging
 
+    def _get(self, tag):
+        logging.debug(f"entered method _get on file ics_sim/Device.py ")
+        logging.debug(f"Attempting to retrieve value for tag: {tag}")
+
+        if self._is_local_tag(tag):
+            logging.debug(f"Tag {tag} is a local tag.")
+            
             if self._is_input_tag(tag):
-                return self._sensor_connector.read(tag)
+                logging.debug(f"Tag {tag} is an input tag.")
+                value = self._sensor_connector.read(tag)
+                logging.debug(f"Read value {value} from sensor for tag: {tag}")
+                return value
             else:
-                return self.server.get(self._get_tag_id(tag))
+                tag_id = self._get_tag_id(tag)
+                value = self.server.get(tag_id)
+                logging.debug(f"Retrieved value {value} from server for tag ID {tag_id} (Tag: {tag})")
+                return value
         else:
             try:
-                return self._receive(tag)
+                value = self._receive(tag)
+                #logging.debug(f"Received value {value} for remote tag: {tag}")
+                return value
             except Exception as e:
-                self.report('receive null value for tag:{}'.format(tag), logging.WARNING)
-                return -1
+                #logging.warning(f"Failed to receive value for tag {tag}: {e}")
+                return None
+
 
     def _set(self, tag, value):
         if self._is_local_tag(tag):

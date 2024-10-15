@@ -172,8 +172,7 @@ class AttackerRemote(AttackerBase):
     def find_device_address(device_name):
         if device_name.lower() == 'plc1':
             return '192.168.0.11'
-        elif device_name.lower() == 'plc2':
-            return '192.168.0.12'
+
 
         elif device_name.lower() == 'hmi1':
             return '192.168.0.21'

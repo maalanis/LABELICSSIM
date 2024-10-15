@@ -1,4 +1,5 @@
 import os
+import logging
 import sqlite3
 import memcache
 from abc import abstractmethod, ABC
@@ -11,7 +12,11 @@ import json
 
 from ics_sim.protocol import ClientModbus
 
-
+# Setup logging configuration
+logging.basicConfig(level=logging.DEBUG,
+                    filename='app.log',  # Specify your log file's path here
+                    filemode='a',  # 'w' will overwrite the log file each run; 'a' will append to the end of the log file
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 class Connector(ABC):
 
     """Base class."""
@@ -39,32 +44,41 @@ class SQLiteConnector(Connector):
         Connector.__init__(self, connection)
         self._key = 'name'
         self._value = 'value'
+        #logging.debug(f"Initializing SQLiteConnector with database path: {self._path}")
 
+        
     def initialize(self, values, clear_old=True):
+        #logging.debug("Initializing database schema...")
         if clear_old and os.path.isfile(self._path):
             os.remove(self._path)
+            #logging.debug("Existing database file removed.")
+            
+            
 
         schema = """
-        CREATE TABLE {} (
-            {}              TEXT NOT NULL,
-            {}             REAL,
-            PRIMARY KEY ({})
+        CREATE TABLE IF NOT EXISTS {} (
+            {} TEXT NOT NULL,
+            {} REAL,
+            PRIMARY KEY({})
         );
         """.format(self._name, self._key, self._value, self._key)
-        with sqlite3.connect(self._path) as conn:
-            conn.executescript(schema)
 
-        init_template = """
-                INSERT INTO {}""".format(self._name) + " VALUES ('{}',  {});"
-
-        schema_init = ""
-        for item in values:
-            schema_init += init_template.format(*item)
-
-        with sqlite3.connect(self._path) as conn:
-            conn.executescript(schema_init)
+        try:
+            with sqlite3.connect(self._path) as conn:
+                conn.executescript(schema)
+                #logging.debug("Database schema created.")
+                if values:
+                    init_template = "INSERT INTO {}({},{}) VALUES (?, ?);".format(self._name, self._key, self._value)
+                    cursor = conn.cursor()
+                    cursor.executemany(init_template, values)
+                    conn.commit()
+        except sqlite3.Error as e:
+            error(f'Error initializing database: {e}')
+            # Consider adding more sophisticated error handling here.
+            # Maybe a retry mechanism, alerting, or a fallback to a default state.
 
     def set(self, key, value):
+        #logging.debug(f"Setting value for {key}...")
         set_query = 'UPDATE {} SET {} = ? WHERE {} = ?'.format(
             self._name,
             self._value,
@@ -74,29 +88,33 @@ class SQLiteConnector(Connector):
                 cursor = conn.cursor()
                 cursor.execute(set_query, [value, key])
                 conn.commit()
+                #logging.debug(f"Set value for {key} successfuly")
                 return value
 
             except sqlite3.Error as e:
+                logging.debug(f"Error Setting value for {key}")
                 error(f'_set in ICSSIM connection {e.args[0]} for setting tag {key}')
 
+    
     def get(self, key):
-        get_query = """SELECT {} FROM {} WHERE {} = ?""".format(
-            self._value,
-            self._name,
-            self._key)
-
-        with sqlite3.connect(self._path) as conn:
-            try:
-
+        get_query = "SELECT value FROM {} WHERE name = ?".format(self._name)
+        #logging.debug(f"Attempting to retrieve key '{key}' from table '{self._name}'.")
+        try:
+            #logging.debug(f"path {self._path}")
+            with sqlite3.connect(self._path) as conn:
+                #logging.debug(f"conn: {conn}")
                 cursor = conn.cursor()
-                cursor.execute(get_query, [key])
+                #logging.debug(f"cursor: {cursor}")
+                cursor.execute(get_query, (key,))
                 record = cursor.fetchone()
+                if record is None:
+                    #logging.error(f"No record found for key: {key}")
+                    return None  # You can choose to return a default value instead
                 return record[0]
-
-            except sqlite3.Error as e:
-                error(f'_get in ICSSIM connection {e.args[0]} for getting tag {key}')
-
-
+        except sqlite3.Error as e:
+            logging.error(f"Database error while retrieving key {key}: {str(e)}")
+            return None
+        
 class MemcacheConnector(Connector):
     def __init__(self, connection):
         Connector.__init__(self, connection)

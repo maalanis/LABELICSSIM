@@ -10,62 +10,70 @@ class SimulationConfig:
 
 
 class PHYSICS:
-    TANK_LEVEL_CAPACITY = 3     # Liter
-    TANK_MAX_LEVEL = 10
-    TANK_INPUT_FLOW_RATE = 0.0002  # Liter/mil-second
-    TANK_OUTPUT_FLOW_RATE = 0.0001  # Liter/mil-second
+    # Constants for Labeling and Verification Process
+    SCANNER_READ_SPEED = 0.001  # Time in seconds to read a label
+    PRINTER_PRINT_SPEED = 0.05  # Time in seconds to print a label
+    NETWORK_DELAY = 0.01  # Time in seconds for network communication delay
 
-    BOTTLE_LEVEL_CAPACITY = 0.75   # Liter
-    BOTTLE_MAX_LEVEL = 2
-    BOTTLE_DISTANCE = 20  # Centimeter
+    # Example constants for sensor detection (modify as needed)
+    SENSOR_DETECTION_TIME = 0.002  # Time in seconds for part presence sensor to detect a part
 
     CONVEYOR_BELT_SPEED = 0.005  # Centimeter/mil-second
 
+    PART_DISTANCE = 20
+
 
 class TAG:
-    TAG_TANK_INPUT_VALVE_STATUS = 'tank_input_valve_status'
-    TAG_TANK_INPUT_VALVE_MODE = 'tank_input_valve_mode'
+    # Define tag names as constants for easier maintenance and readability
+    PART_PRESENT = 'PartPresent'
+    CUSTOMER_PART_NUMBER = 'CPN'
+    MAHLE_PART_NUMBER = 'MPN'
+    SERIAL_NUMBER = 'SN'
+    READ_PN_SN = 'ReadPNSN'
+    CODE_READED = 'CodeReaded'
+    HMI_PREVIOUS_TEST_RESULT_CODE = 'HMI.PreviousTestResultCode'
+    HMI_PREVIOUS_TEST_RESULT_MESSAGE = 'HMI.PreviousTestResultMessage'
+    START_TEST = 'StartTest'
+    BYPASS = 'Bypass'
+    TEST_RESULT = 'TestResult'
+    READ_TEST_RESULT = 'ReadTestResult'
+    CONFIRMATION_BIT = 'ConfirmationBit'
+    HEARTBEAT = 'HeartBeat'
+    COM_ERROR = 'ComError'
+    HMI_STATUSCODE = 'HMI.STATUSCODE'
+    HMI_MESSAGE = 'HMI.MESSAGE'
+    MACHINE_RESET = 'MachineReset'
 
-    TAG_TANK_LEVEL_VALUE = 'tank_level_value'
-    TAG_TANK_LEVEL_MAX = 'tank_level_max'
-    TAG_TANK_LEVEL_MIN = 'tank_level_min'
-
-    TAG_TANK_OUTPUT_VALVE_STATUS = 'tank_output_valve_status'
-    TAG_TANK_OUTPUT_VALVE_MODE = 'tank_output_valve_mode'
-
-    TAG_TANK_OUTPUT_FLOW_VALUE = 'tank_output_flow_value'
-
-    TAG_CONVEYOR_BELT_ENGINE_STATUS= 'conveyor_belt_engine_status'
-    TAG_CONVEYOR_BELT_ENGINE_MODE = 'conveyor_belt_engine_mode'
-
-    TAG_BOTTLE_LEVEL_VALUE = 'bottle_level_value'
-    TAG_BOTTLE_LEVEL_MAX = 'bottle_level_max'
-
-    TAG_BOTTLE_DISTANCE_TO_FILLER_VALUE = 'bottle_distance_to_filler_value'
+    #TEST TAGS
+    CONVEYOR_BELT_ENGINE_STATUS= 'conveyor_belt_engine_status'
+    CONVEYOR_BELT_ENGINE_MODE = 'conveyor_belt_engine_mode'
+    PART_DISTANCE_TO_SENSOR_VALUE = 'part_distance_to_sensor_value'
 
     TAG_LIST = {
-        # tag_name (tag_id, PLC number, input/output, fault (just for inputs)
-        TAG_TANK_INPUT_VALVE_STATUS:             {'id': 0, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 1},
-        TAG_TANK_INPUT_VALVE_MODE:              {'id': 1, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 3},
+        PART_PRESENT: {'id': 0, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
+        CUSTOMER_PART_NUMBER: {'id': 1, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
+        MAHLE_PART_NUMBER: {'id': 2, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
+        SERIAL_NUMBER: {'id': 3, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
+        READ_PN_SN: {'id': 4, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        CODE_READED: {'id': 5, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        HMI_PREVIOUS_TEST_RESULT_CODE: {'id': 6, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        HMI_PREVIOUS_TEST_RESULT_MESSAGE: {'id': 7, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        START_TEST: {'id': 8, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        BYPASS: {'id': 9, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        TEST_RESULT: {'id': 10, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        READ_TEST_RESULT: {'id': 11, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        CONFIRMATION_BIT: {'id': 12, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        HEARTBEAT: {'id': 13, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        COM_ERROR: {'id': 14, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        HMI_STATUSCODE: {'id': 15, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        HMI_MESSAGE: {'id': 16, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        MACHINE_RESET: {'id': 17, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        CONVEYOR_BELT_ENGINE_STATUS:{'id': 18, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        CONVEYOR_BELT_ENGINE_MODE:{'id': 19, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 3},
+        PART_DISTANCE_TO_SENSOR_VALUE:{'id': 20, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 10},
 
-        TAG_TANK_LEVEL_VALUE:                   {'id': 2, 'plc': 1, 'type': 'input',  'fault': 0.0, 'default': 5.8},
-        TAG_TANK_LEVEL_MIN:                     {'id': 3, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 3},
-        TAG_TANK_LEVEL_MAX:                     {'id': 4, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 7},
+    }   
 
-
-        TAG_TANK_OUTPUT_VALVE_STATUS:            {'id': 5, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
-        TAG_TANK_OUTPUT_VALVE_MODE:             {'id': 6, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 3},
-
-        TAG_TANK_OUTPUT_FLOW_VALUE:             {'id': 7, 'plc': 1, 'type': 'input',  'fault': 0.0, 'default': 0},
-
-        TAG_CONVEYOR_BELT_ENGINE_STATUS:         {'id': 8, 'plc': 2, 'type': 'output', 'fault': 0.0, 'default': 0},
-        TAG_CONVEYOR_BELT_ENGINE_MODE:          {'id': 9, 'plc': 2, 'type': 'output', 'fault': 0.0, 'default': 3},
-
-        TAG_BOTTLE_LEVEL_VALUE:                 {'id': 10, 'plc': 2, 'type': 'input', 'fault': 0.0, 'default': 0},
-        TAG_BOTTLE_LEVEL_MAX:                   {'id': 11, 'plc': 2, 'type': 'output', 'fault': 0.0, 'default': 1.8},
-
-        TAG_BOTTLE_DISTANCE_TO_FILLER_VALUE:    {'id': 12, 'plc': 2, 'type': 'input', 'fault': 0.0, 'default': 0},
-    }
 
 
 class Controllers:
@@ -77,12 +85,7 @@ class Controllers:
                 'port': 502,
                 'protocol': 'ModbusWriteRequest-TCP'
              },
-            2: {
-                'name': 'PLC2',
-                'ip': '192.168.0.12',
-                'port': 502,
-                'protocol': 'ModbusWriteRequest-TCP'
-             },
+
         },
         SimulationConfig.EXECUTION_MODE_GNS3: {
             1: {
@@ -91,12 +94,7 @@ class Controllers:
                 'port': 502,
                 'protocol': 'ModbusWriteRequest-TCP'
             },
-            2: {
-                'name': 'PLC2',
-                'ip': '192.168.0.12',
-                'port': 502,
-                'protocol': 'ModbusWriteRequest-TCP'
-            },
+
         },
         SimulationConfig.EXECUTION_MODE_LOCAL: {
             1: {
@@ -105,12 +103,7 @@ class Controllers:
                 'port': 5502,
                 'protocol': 'ModbusWriteRequest-TCP'
              },
-            2: {
-                'name': 'PLC2',
-                'ip': '127.0.0.1',
-                'port': 5503,
-                'protocol': 'ModbusWriteRequest-TCP'
-             },
+
         }
     }
 

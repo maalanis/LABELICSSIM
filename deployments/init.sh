@@ -10,7 +10,7 @@ printStep(){
 printStep "DEPLOYMENT"
 
 printStep "DOWN PREVIOUS CONTAINERS"
-sudo docker-compose down 
+sudo docker compose down 
 
 printStep "CTEATE TEMP SRC FILE"
 sudo mkdir ./ics-docker/src/ 
@@ -20,14 +20,14 @@ printStep "PRUNING DOCKER"
 sudo docker system prune -f
 
 printStep 'DOCKER_COMPOSE BUILD'
-sudo docker-compose build
+sudo docker compose build
 
 printStep "REMOVE TEMP SRC FILE"
 sudo rm -r ./ics-docker/src/ 
 sudo rm -r ./attacker-docker/src/ 
 
 printStep 'DOCKER_COMPOSE UP'
-sudo docker-compose up
+sudo docker compose up
 
 
 

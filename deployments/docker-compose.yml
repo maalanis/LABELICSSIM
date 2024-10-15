@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   pys:
     build: ics-docker/.
@@ -8,6 +7,7 @@ services:
     container_name: pys
     volumes:
       - ../src:/src
+      - ./app.log:/src/app.log
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
     networks:
@@ -22,6 +22,7 @@ services:
     container_name: plc1
     volumes:
       - ../src:/src
+      - ./app.log:/src/app.log
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
     networks:
@@ -30,25 +31,6 @@ services:
       fnet:
         ipv4_address: 192.168.1.11
 
-      
-  plc2:
-    build: ics-docker/.
-    #stdin_open: true # docker run -i
-    #tty: true
-    privileged: true
-    working_dir: /src
-    entrypoint: ["./start.sh", "PLC2.py"]
-    container_name: plc2
-    volumes:
-      - ../src:/src
-      - "/etc/timezone:/etc/timezone:ro"
-      - "/etc/localtime:/etc/localtime:ro"
-    networks:
-      wnet:
-        ipv4_address: 192.168.0.12
-      fnet:
-        ipv4_address: 192.168.1.12
-      
   hmi1:
     build: ics-docker/.
     stdin_open: true # docker run -i
@@ -59,42 +41,12 @@ services:
     container_name: hmi1
     volumes:
       - ../src:/src
+      - ./app.log:/src/app.log
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
     networks:
       wnet:
         ipv4_address: 192.168.0.21
-        
-  hmi2:
-    build: ics-docker/.
-    stdin_open: true # docker run -i
-    tty: true 
-    privileged: true
-    working_dir: /src
-    entrypoint: ["./start.sh", "HMI2.py"]
-    container_name: hmi2
-    volumes:
-      - ../src:/src
-    networks:
-      wnet:
-        ipv4_address: 192.168.0.22
-        
-        
-  hmi3:
-    build: ics-docker/.
-    stdin_open: true # docker run -i
-    tty: true 
-    privileged: true
-    working_dir: /src
-    entrypoint: ["./start.sh", "HMI3.py"]
-    container_name: hmi3
-    volumes:
-      - ../src:/src
-      - "/etc/timezone:/etc/timezone:ro"
-      - "/etc/localtime:/etc/localtime:ro"
-    networks:
-      wnet:
-        ipv4_address: 192.168.0.23
         
         
   attacker:
@@ -107,6 +59,7 @@ services:
     container_name: attacker
     volumes:
       - ../src:/src
+      - ./app.log:/src/app.log
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
       
@@ -124,6 +77,7 @@ services:
     container_name: attackermachine
     volumes:
       - ../src:/src
+      - ./app.log:/src/app.log
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
     networks:
@@ -140,6 +94,7 @@ services:
     container_name: attackerremote
     volumes:
       - ../src:/src
+      - ./app.log:/src/app.log
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
     networks:
