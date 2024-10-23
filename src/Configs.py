@@ -18,15 +18,17 @@ class PHYSICS:
     # Example constants for sensor detection (modify as needed)
     SENSOR_DETECTION_TIME = 0.002  # Time in seconds for part presence sensor to detect a part
 
-    CONVEYOR_BELT_SPEED = 0.005  # Centimeter/mil-second
+    CONVEYOR_BELT_SPEED = 0.003  # Centimeter/mil-second
 
-    PART_DISTANCE = 20
+    PART_DISTANCE = 7
+
+    STICKER_PLACEMENT = 10 #Time which operator prints and places sticker on part
 
 
 class TAG:
     # Define tag names as constants for easier maintenance and readability
-    PART_PRESENT = 'PartPresent'
-    CUSTOMER_PART_NUMBER = 'CPN'
+    PART_PRESENT = 'PART_PRESENT'
+    CUSTOMER_PART_NUMBER = 'CUSTOMER_PART_NUMBER'
     MAHLE_PART_NUMBER = 'MPN'
     SERIAL_NUMBER = 'SN'
     READ_PN_SN = 'ReadPNSN'
@@ -48,6 +50,7 @@ class TAG:
     CONVEYOR_BELT_ENGINE_STATUS= 'conveyor_belt_engine_status'
     CONVEYOR_BELT_ENGINE_MODE = 'conveyor_belt_engine_mode'
     PART_DISTANCE_TO_SENSOR_VALUE = 'part_distance_to_sensor_value'
+    WAITING_FOR_STICKER = 'waiting_for_sticker'
 
     TAG_LIST = {
         PART_PRESENT: {'id': 0, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
@@ -68,9 +71,10 @@ class TAG:
         HMI_STATUSCODE: {'id': 15, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
         HMI_MESSAGE: {'id': 16, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
         MACHINE_RESET: {'id': 17, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
-        CONVEYOR_BELT_ENGINE_STATUS:{'id': 18, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
-        CONVEYOR_BELT_ENGINE_MODE:{'id': 19, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 3},
-        PART_DISTANCE_TO_SENSOR_VALUE:{'id': 20, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 10},
+        CONVEYOR_BELT_ENGINE_STATUS:{'id': 18, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 1},
+        CONVEYOR_BELT_ENGINE_MODE:{'id': 19, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 2},
+        PART_DISTANCE_TO_SENSOR_VALUE:{'id': 20, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 5},
+        WAITING_FOR_STICKER:{'id': 21, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
 
     }   
 

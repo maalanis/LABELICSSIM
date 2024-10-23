@@ -407,31 +407,34 @@ class PLC(DcsComponent):
     def __init_sensors(self):
         for tag in self.tags:
             if self._is_input_tag(tag):
+                logging.debug(f"adding sensor {tag}")
                 self._sensor_connector.add_sensor(tag, self._get_tag_fault(tag))
 
     def __init_actuators(self):
         for tag in self.tags:
+            
             if self._is_output_tag(tag):
+                logging.debug(f"adding actuator {tag}")
                 self._actuator_connector.add_actuator(tag)
 
     import logging
 
     def _get(self, tag):
-        logging.debug(f"entered method _get on file ics_sim/Device.py ")
-        logging.debug(f"Attempting to retrieve value for tag: {tag}")
+        #logging.debug(f"entered method _get on file ics_sim/Device.py ")
+        #logging.debug(f"Attempting to retrieve value for tag: {tag}")
 
         if self._is_local_tag(tag):
-            logging.debug(f"Tag {tag} is a local tag.")
+            #logging.debug(f"Tag {tag} is a local tag.")
             
             if self._is_input_tag(tag):
-                logging.debug(f"Tag {tag} is an input tag.")
+                #logging.debug(f"Tag {tag} is an input tag.")
                 value = self._sensor_connector.read(tag)
-                logging.debug(f"Read value {value} from sensor for tag: {tag}")
+                #logging.debug(f"Read value {value} from sensor for tag: {tag}")
                 return value
             else:
                 tag_id = self._get_tag_id(tag)
                 value = self.server.get(tag_id)
-                logging.debug(f"Retrieved value {value} from server for tag ID {tag_id} (Tag: {tag})")
+                #logging.debug(f"Retrieved value {value} from server for tag ID {tag_id} (Tag: {tag})")
                 return value
         else:
             try:
@@ -444,7 +447,11 @@ class PLC(DcsComponent):
 
 
     def _set(self, tag, value):
+        #logging.debug(f"DEVICE Setting value for {tag}...")
         if self._is_local_tag(tag):
+            #logging.debug("is local tag")
+            tagId = self._get_tag_id(tag)
+            #logging.debug(f" INSERTING TEST tagid: {tagId} value: {value}")
             self.server.set(self._get_tag_id(tag), value)
             return self._actuator_connector.write(tag, value)
         else:

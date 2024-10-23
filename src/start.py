@@ -1,4 +1,5 @@
 import random
+import time
 
 from pyModbusTCP.server import ModbusServer
 
@@ -18,9 +19,12 @@ factory = FactorySimulation()
 factory.start()
 
 
+
 plc1 = PLC1()
 # plc1.set_record_variables(True)
 plc1.start()
+
+
 
 
 hmi1 = HMI1()
