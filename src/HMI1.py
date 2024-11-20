@@ -7,10 +7,14 @@ from Configs import TAG, Controllers
 
 class HMI1(HMI):
     filtered_tags = {
+
         TAG.PART_PRESENT, 
         TAG.WAITING_FOR_STICKER,
         TAG.CONVEYOR_BELT_ENGINE_STATUS, 
-        TAG.PART_DISTANCE_TO_SENSOR_VALUE
+        TAG.PART_DISTANCE_TO_SENSOR_VALUE,
+        TAG.PART_READY,
+        TAG.PRINTING_STICKER_TAG, 
+        TAG.BARCODE_VERIFICATION_STATUS
     }
     def __init__(self):
         super().__init__('HMI1', TAG.TAG_LIST, Controllers.PLCs, 500)
@@ -89,7 +93,7 @@ class HMI1(HMI):
             if value is None:
                 raise ValueError("Received None value for tag: {}".format(tag))
         except Exception as e:
-            self.report(str(e), logging.WARNING)  # Use str(e) directly with logging
+           # self.report(str(e), logging.WARNING)  # Use str(e) directly with logging
             return self._make_text(value.center(self.msg2_length, " "), self.COLOR_RED)
         
 

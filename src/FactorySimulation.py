@@ -9,76 +9,84 @@ logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='a',
 class FactorySimulation(HIL):
     def __init__(self):
         super().__init__('Factory', Connection.CONNECTION, 100)
-        # Configure logging
-    
         self.init()
         self.sticker_placement_start_time = None  # Initialize the start time for sticker placement
+        self.processing_part = False  # Track whether a part is being processed
 
     def init(self):
+        """Initialize the simulation with default tag values."""
         initial_list = []
         for tag in TAG.TAG_LIST:
             initial_value = (tag, TAG.TAG_LIST[tag]['default'])
             initial_list.append(initial_value)
-            logging.debug(f"add {tag}  with value {initial_value}")
-            # Log each tag and its default value as they are added
-            #tag to initial list: {tag}, Default Value: {TAG.TAG_LIST[tag]['default']}")
+            logging.debug(f"Initializing tag: {tag} with value {initial_value}")
         
         self._connector.initialize(initial_list)
         logging.info("Database initialization completed with initial values.")
 
     def _logic(self):
+        """Main logic for simulating factory behavior."""
         elapsed_time = self._current_loop_time - self._last_loop_time
-        #logging.debug(f"elapsed time: {elapsed_time} clt: {self._current_loop_time} llt: {self._last_loop_time}")
-        # Check if the radiator part is present
-        pp = self._get(TAG.PART_PRESENT)
-        logging.debug(f"FS part present: {pp}")
-        if pp:
-            self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 0.0)
-            if self.sticker_placement_start_time is None:
-                self.sticker_placement_start_time = time.time()  # Mark the start time when the part is first detected
-                logging.debug("Part detected, starting sticker placement countdown.")
-                self._set(TAG.WAITING_FOR_STICKER, 1)
+        part_present = self._get(TAG.PART_PRESENT)
+        logging.debug(f"Factory Simulation - Part present: {part_present}")
 
-            # Calculate the elapsed time since the sticker placement started
+        if part_present and not self.processing_part:
+            # Start processing the part if it's detected and not already being processed
+            self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 0.0)  # Stop the conveyor belt
+            logging.debug("Conveyor belt stopped. Part detected.")
+            if self.sticker_placement_start_time is None:
+                self.sticker_placement_start_time = time.time()
+                self.processing_part = True
+                self._set(TAG.WAITING_FOR_STICKER, 1)
+                logging.debug("Started sticker placement countdown.")
+
+        if self.processing_part:
+            # Check if sticker placement has completed
             time_since_sticker_started = time.time() - self.sticker_placement_start_time
+            logging.debug(f"Sticker placement time elapsed: {time_since_sticker_started:.2f}s")
 
             if time_since_sticker_started >= PHYSICS.STICKER_PLACEMENT:
-                logging.debug("20 seconds elapsed, processing the part.")
+                logging.debug("Sticker placement completed. Processing the part.")
                 self._set(TAG.WAITING_FOR_STICKER, 0)
                 self._set(TAG.PART_PRESENT, 0)
-                self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 1)
-                self._set(TAG.PART_DISTANCE_TO_SENSOR_VALUE, 7)
-                self.sticker_placement_start_time = None  # Reset the start time
+                self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 1)  # Restart the conveyor belt
+                self._set(TAG.PART_DISTANCE_TO_SENSOR_VALUE, PHYSICS.PART_DISTANCE)
+                self.sticker_placement_start_time = None
+                self.processing_part = False
 
-        else: 
-            #update part position
+        elif not part_present:
+            # Update part position if no part is present
             part_distance_to_sensor = self._get(TAG.PART_DISTANCE_TO_SENSOR_VALUE)
-            logging.debug(f"FS part distance to sensor: {part_distance_to_sensor}")
-            conveyor_belt_stat = self._get(TAG.CONVEYOR_BELT_ENGINE_STATUS)
-            if conveyor_belt_stat:
+            logging.debug(f"Part distance to sensor: {part_distance_to_sensor}")
+            conveyor_belt_status = self._get(TAG.CONVEYOR_BELT_ENGINE_STATUS)
+
+            if conveyor_belt_status:
                 part_distance_to_sensor -= elapsed_time * PHYSICS.CONVEYOR_BELT_SPEED
                 part_distance_to_sensor %= PHYSICS.PART_DISTANCE
-                if(part_distance_to_sensor <1):
-                    self._set(TAG.PART_PRESENT, 1.0)
-                    self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 0.0)
-                logging.debug(f"FS new part distance to sensor:{part_distance_to_sensor}" )
-                self._set(TAG.PART_DISTANCE_TO_SENSOR_VALUE, part_distance_to_sensor)
-            
-        #self._update_physical_properties(elapsed_time)
+
+                if part_distance_to_sensor < 1:
+                    self._set(TAG.PART_PRESENT, 1.0)  # Detect a new part
+                    self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 0.0)  # Stop conveyor belt
+                    logging.debug("New part detected. Stopping conveyor belt.")
+                else:
+                    self._set(TAG.PART_DISTANCE_TO_SENSOR_VALUE, part_distance_to_sensor)
+                    logging.debug(f"Updated part distance to sensor: {part_distance_to_sensor}")
 
     def _simulate_label_application(self):
+        """Simulate the label application process."""
         part_number = self._get(TAG.CUSTOMER_PART_NUMBER)
         serial_number = self._get(TAG.SERIAL_NUMBER)
         if part_number and serial_number:
-            self.report(f'Label applied with PN: {part_number}, SN: {serial_number}', logging.INFO)
+            self.report(f"Label applied with PN: {part_number}, SN: {serial_number}", logging.INFO)
 
     def _simulate_barcode_scanning(self):
+        """Simulate barcode scanning."""
         if self._get(TAG.CODE_READED):
             part_data = self._retrieve_part_data()
-            self.report(f'Barcode scanned: {part_data}', logging.INFO)
+            self.report(f"Barcode scanned: {part_data}", logging.INFO)
 
     def _retrieve_part_data(self):
-        # This function would typically interact with a database or an external system
+        """Retrieve part data for simulation."""
         return {
             'part_number': self._get(TAG.CUSTOMER_PART_NUMBER),
             'serial_number': self._get(TAG.SERIAL_NUMBER),
@@ -86,20 +94,15 @@ class FactorySimulation(HIL):
         }
 
     def _update_physical_properties(self, elapsed_time):
-        # Example physical property update
-        # Update conveyor belt status based on machine state
+        """Update physical properties like conveyor belt status."""
         conveyor_status = self._get(TAG.CONVEYOR_BELT_ENGINE_STATUS)
         if conveyor_status:
-            self.report('Conveyor belt in operation', logging.INFO)
-
+            self.report("Conveyor belt in operation", logging.INFO)
 
 
 if __name__ == '__main__':
     factory = FactorySimulation()
     factory.start()
-
-
-
 
 
 

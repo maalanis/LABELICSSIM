@@ -98,9 +98,12 @@ class ActuatorConnector(Physics):
         self._actuators.append(tag)
 
     def write(self, tag, value):
+        logging.debug(f"Enter write method with tag: {tag} value: {value}")
+
         if tag in self._actuators:
             self._set(tag, value)
         else:
+            logging.error(f"error with tag: {tag} value: {value}")
             raise LookupError()
 
 
@@ -451,8 +454,9 @@ class PLC(DcsComponent):
         if self._is_local_tag(tag):
             #logging.debug("is local tag")
             tagId = self._get_tag_id(tag)
-            #logging.debug(f" INSERTING TEST tagid: {tagId} value: {value}")
+            logging.debug(f" INSERTING TEST tagid: {tagId} value: {value}")
             self.server.set(self._get_tag_id(tag), value)
+            logging.debug(f"server.set successfull")
             return self._actuator_connector.write(tag, value)
         else:
             self._send(tag, value)

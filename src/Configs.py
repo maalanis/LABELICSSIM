@@ -3,28 +3,28 @@ class SimulationConfig:
     EXECUTION_MODE_LOCAL = 'local'
     EXECUTION_MODE_DOCKER = 'docker'
     EXECUTION_MODE_GNS3 = 'gns3'
-
+ 
     # configurable
     EXECUTION_MODE = EXECUTION_MODE_DOCKER
-
-
-
+ 
+ 
+ 
 class PHYSICS:
     # Constants for Labeling and Verification Process
     SCANNER_READ_SPEED = 0.001  # Time in seconds to read a label
     PRINTER_PRINT_SPEED = 0.05  # Time in seconds to print a label
     NETWORK_DELAY = 0.01  # Time in seconds for network communication delay
-
+ 
     # Example constants for sensor detection (modify as needed)
     SENSOR_DETECTION_TIME = 0.002  # Time in seconds for part presence sensor to detect a part
-
+ 
     CONVEYOR_BELT_SPEED = 0.003  # Centimeter/mil-second
-
+ 
     PART_DISTANCE = 7
-
+ 
     STICKER_PLACEMENT = 10 #Time which operator prints and places sticker on part
-
-
+ 
+ 
 class TAG:
     # Define tag names as constants for easier maintenance and readability
     PART_PRESENT = 'PART_PRESENT'
@@ -45,13 +45,19 @@ class TAG:
     HMI_STATUSCODE = 'HMI.STATUSCODE'
     HMI_MESSAGE = 'HMI.MESSAGE'
     MACHINE_RESET = 'MachineReset'
-
+ 
+    # New Working Tags
+    PRINTING_STICKER_TAG = 'PRINTING_STICKER'  # Indicates that a sticker is currently being printed and applied
+    BARCODE_VERIFICATION_STATUS = 'BARCODE_VERIFICATION_STATUS'  # Tracks whether the barcode has been verified
+    PART_READY = 'PART_READY'  # Indicates that the part is in position and ready for the next operation
+    CONVEYOR_STATUS = 'CONVEYOR_STATUS'  # Tracks whether the conveyor is running or stopped
+ 
     #TEST TAGS
     CONVEYOR_BELT_ENGINE_STATUS= 'conveyor_belt_engine_status'
     CONVEYOR_BELT_ENGINE_MODE = 'conveyor_belt_engine_mode'
     PART_DISTANCE_TO_SENSOR_VALUE = 'part_distance_to_sensor_value'
     WAITING_FOR_STICKER = 'waiting_for_sticker'
-
+ 
     TAG_LIST = {
         PART_PRESENT: {'id': 0, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
         CUSTOMER_PART_NUMBER: {'id': 1, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
@@ -75,11 +81,15 @@ class TAG:
         CONVEYOR_BELT_ENGINE_MODE:{'id': 19, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 2},
         PART_DISTANCE_TO_SENSOR_VALUE:{'id': 20, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 5},
         WAITING_FOR_STICKER:{'id': 21, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
-
+        PRINTING_STICKER_TAG: {'id': 22, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        BARCODE_VERIFICATION_STATUS: {'id': 23, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        PART_READY: {'id': 24, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 1},
+        CONVEYOR_STATUS: {'id': 25, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 1},
+ 
     }   
-
-
-
+ 
+ 
+ 
 class Controllers:
     PLC_CONFIG = {
         SimulationConfig.EXECUTION_MODE_DOCKER: {
@@ -89,7 +99,7 @@ class Controllers:
                 'port': 502,
                 'protocol': 'ModbusWriteRequest-TCP'
              },
-
+ 
         },
         SimulationConfig.EXECUTION_MODE_GNS3: {
             1: {
@@ -98,7 +108,7 @@ class Controllers:
                 'port': 502,
                 'protocol': 'ModbusWriteRequest-TCP'
             },
-
+ 
         },
         SimulationConfig.EXECUTION_MODE_LOCAL: {
             1: {
@@ -107,13 +117,13 @@ class Controllers:
                 'port': 5502,
                 'protocol': 'ModbusWriteRequest-TCP'
              },
-
+ 
         }
     }
-
+ 
     PLCs = PLC_CONFIG[SimulationConfig.EXECUTION_MODE]
-
-
+ 
+ 
 class Connection:
     SQLITE_CONNECTION = {
         'type': 'sqlite',
@@ -135,11 +145,11 @@ class Connection:
         'path': 'storage/sensors_actuators.json',
         'name': 'fake_name',
     }
-
+ 
     CONNECTION_CONFIG = {
         SimulationConfig.EXECUTION_MODE_GNS3: MEMCACHE_DOCKER_CONNECTION,
         SimulationConfig.EXECUTION_MODE_DOCKER: SQLITE_CONNECTION, #todo : return back to sqlite connection
         SimulationConfig.EXECUTION_MODE_LOCAL: SQLITE_CONNECTION
     }
     CONNECTION = CONNECTION_CONFIG[SimulationConfig.EXECUTION_MODE]
-
+ 
