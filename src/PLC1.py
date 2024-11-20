@@ -21,15 +21,25 @@ class PLC1(PLC):
 
     def _initialize_tags(self):
         """Initialize all relevant tags to their default values."""
-        self._set(TAG.PRINTING_STICKER_TAG, 0)        # Printing sticker tag default: 0 (not printing)
+        self._get(TAG.PRINTING_STICKER_TAG)        # Printing sticker tag default: 0 (not printing)
+        self._get(TAG.BARCODE_VERIFICATION_STATUS) # Barcode verification status default: 0 (not verified)
+        self._get(TAG.PART_READY)                  # Part ready status default: 0 (not ready)
+        self._get(TAG.CONVEYOR_BELT_ENGINE_STATUS) # Conveyor status default: 1 (running)
+        """
+        
+         self._set(TAG.PRINTING_STICKER_TAG, 0)        # Printing sticker tag default: 0 (not printing)
         self._set(TAG.BARCODE_VERIFICATION_STATUS, 0) # Barcode verification status default: 0 (not verified)
         self._set(TAG.PART_READY, 0)                  # Part ready status default: 0 (not ready)
-        self._set(TAG.CONVEYOR_STATUS, 1)             # Conveyor status default: 1 (running)
+        self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 1) # Conveyor status default: 1 (running)
+        """
         logging.debug("Initialization: Tags set to default values")
 
     def _logic(self):
         # Check if the part is present
         part_present = self._get(TAG.PART_PRESENT)
+        if part_present is None:
+            logging.error("PART_PRESENT tag value is None.")
+            part_present = 0  # Assign a default value or handle accordingly
 
         if part_present:
             logging.debug("Action: Scanning barcode, retrieving part details")
@@ -63,6 +73,11 @@ class PLC1(PLC):
                 if self._get(TAG.BARCODE_VERIFICATION_STATUS) == 1:
                     self._set(TAG.START_TEST, 1)
                     logging.debug("Action: Starting test process for verified part")
+
+                    # Processing complete, reset PART_PRESENT and start conveyor
+                    self._set(TAG.PART_PRESENT, 0)  # Remove the part
+                    self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 1)  # Start conveyor belt
+                    logging.debug("Status: Part processed, conveyor started")
                 else:
                     self._set_hmi_message("Part can't be processed in this station")
                     logging.debug("Error: Part verification failed; cannot proceed")
@@ -70,14 +85,18 @@ class PLC1(PLC):
         else:
             logging.debug("Status: No part detected at the sensor")
             part_position = self._get(TAG.PART_DISTANCE_TO_SENSOR_VALUE)
+            if part_position is None:
+                logging.error("PART_DISTANCE_TO_SENSOR_VALUE tag value is None.")
+                part_position = PHYSICS.PART_DISTANCE  # Assign a default value or handle accordingly
             logging.debug(f"Sensor reading: PLC part position: {part_position}")
 
-            if part_position is not None and part_position < 1.5:
-                self._set(TAG.CONVEYOR_STATUS, 0)  # Stop conveyor when part is in position
+            if part_position < 1.5:
+                self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 0)  # Stop conveyor when part is in position
                 self._set(TAG.PART_READY, 1)       # Set PART_READY when part is in position
+                self._set(TAG.PART_PRESENT, 1)     # Indicate part is present
                 logging.debug("Status: Part is in position, conveyor stopped")
             else:
-                self._set(TAG.CONVEYOR_STATUS, 1)  # Keep conveyor moving until part reaches position
+                self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 1)  # Keep conveyor moving until part reaches position
                 self._set(TAG.PART_READY, 0)
                 logging.debug("Status: Conveyor running, part not yet in position")
 

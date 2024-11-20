@@ -3,6 +3,7 @@ import time
 from ics_sim.Device import HIL
 from Configs import TAG, PHYSICS, Connection
 
+# Setup logging
 logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='a', 
                     format='%(name)s - %(levelname)s - %(message)s')
 
@@ -11,7 +12,6 @@ class FactorySimulation(HIL):
         super().__init__('Factory', Connection.CONNECTION, 100)
         self.init()
         self.sticker_placement_start_time = None  # Initialize the start time for sticker placement
-        self.processing_part = False  # Track whether a part is being processed
 
     def init(self):
         """Initialize the simulation with default tag values."""
@@ -27,50 +27,50 @@ class FactorySimulation(HIL):
     def _logic(self):
         """Main logic for simulating factory behavior."""
         elapsed_time = self._current_loop_time - self._last_loop_time
+
+        # Get the current state of the conveyor belt and part presence
+        conveyor_belt_status = self._get(TAG.CONVEYOR_BELT_ENGINE_STATUS)
         part_present = self._get(TAG.PART_PRESENT)
-        logging.debug(f"Factory Simulation - Part present: {part_present}")
 
-        if part_present and not self.processing_part:
-            # Start processing the part if it's detected and not already being processed
-            self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 0.0)  # Stop the conveyor belt
-            logging.debug("Conveyor belt stopped. Part detected.")
-            if self.sticker_placement_start_time is None:
-                self.sticker_placement_start_time = time.time()
-                self.processing_part = True
-                self._set(TAG.WAITING_FOR_STICKER, 1)
-                logging.debug("Started sticker placement countdown.")
+        # Handle cases where the tag values might be None
+        if conveyor_belt_status is None:
+            logging.error("CONVEYOR_BELT_ENGINE_STATUS tag value is None.")
+            conveyor_belt_status = 1  # Default to running
 
-        if self.processing_part:
-            # Check if sticker placement has completed
-            time_since_sticker_started = time.time() - self.sticker_placement_start_time
-            logging.debug(f"Sticker placement time elapsed: {time_since_sticker_started:.2f}s")
+        if part_present is None:
+            logging.error("PART_PRESENT tag value is None.")
+            part_present = 0  # Default to no part present
 
-            if time_since_sticker_started >= PHYSICS.STICKER_PLACEMENT:
-                logging.debug("Sticker placement completed. Processing the part.")
-                self._set(TAG.WAITING_FOR_STICKER, 0)
-                self._set(TAG.PART_PRESENT, 0)
-                self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 1)  # Restart the conveyor belt
-                self._set(TAG.PART_DISTANCE_TO_SENSOR_VALUE, PHYSICS.PART_DISTANCE)
-                self.sticker_placement_start_time = None
-                self.processing_part = False
-
-        elif not part_present:
-            # Update part position if no part is present
+        # If the conveyor belt is running and no part is present, move the part closer to the sensor
+        if conveyor_belt_status:
             part_distance_to_sensor = self._get(TAG.PART_DISTANCE_TO_SENSOR_VALUE)
-            logging.debug(f"Part distance to sensor: {part_distance_to_sensor}")
-            conveyor_belt_status = self._get(TAG.CONVEYOR_BELT_ENGINE_STATUS)
+            if part_distance_to_sensor is None:
+                logging.error("PART_DISTANCE_TO_SENSOR_VALUE tag value is None.")
+                part_distance_to_sensor = PHYSICS.PART_DISTANCE  # Default starting distance
 
-            if conveyor_belt_status:
-                part_distance_to_sensor -= elapsed_time * PHYSICS.CONVEYOR_BELT_SPEED
-                part_distance_to_sensor %= PHYSICS.PART_DISTANCE
+            # Update the part's position
+            part_distance_to_sensor -= elapsed_time * PHYSICS.CONVEYOR_BELT_SPEED
+            if part_distance_to_sensor <= 0:
+                part_distance_to_sensor = 0
+                self._set(TAG.PART_PRESENT, 1)  # Part has arrived at the sensor
+                self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 0)  # Stop the conveyor belt
+                logging.debug("Part has arrived at the sensor. Stopping conveyor belt.")
+            else:
+                self._set(TAG.PART_DISTANCE_TO_SENSOR_VALUE, part_distance_to_sensor)
+                logging.debug(f"Updated part distance to sensor: {part_distance_to_sensor}")
 
-                if part_distance_to_sensor < 1:
-                    self._set(TAG.PART_PRESENT, 1.0)  # Detect a new part
-                    self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 0.0)  # Stop conveyor belt
-                    logging.debug("New part detected. Stopping conveyor belt.")
-                else:
-                    self._set(TAG.PART_DISTANCE_TO_SENSOR_VALUE, part_distance_to_sensor)
-                    logging.debug(f"Updated part distance to sensor: {part_distance_to_sensor}")
+        # If the part is present and the conveyor belt is stopped, wait for PLC to process
+        elif part_present:
+            # Wait for PLC to process the part
+            logging.debug("Part is present and conveyor belt is stopped. Waiting for PLC to process.")
+
+        # If the part has been processed by the PLC and the conveyor belt is restarted
+        else:
+            if conveyor_belt_status == 0:
+                # Prepare for the next part
+                self._set(TAG.PART_DISTANCE_TO_SENSOR_VALUE, PHYSICS.PART_DISTANCE)
+                self._set(TAG.CONVEYOR_BELT_ENGINE_STATUS, 1)  # Start the conveyor belt
+                logging.debug("Conveyor belt restarted. Preparing for the next part.")
 
     def _simulate_label_application(self):
         """Simulate the label application process."""
@@ -99,93 +99,6 @@ class FactorySimulation(HIL):
         if conveyor_status:
             self.report("Conveyor belt in operation", logging.INFO)
 
-
 if __name__ == '__main__':
     factory = FactorySimulation()
     factory.start()
-
-
-
-
-
-
-
-
-
-
-
-"""
-class FactorySimulation(HIL):
-    def __init__(self):
-        super().__init__('Factory', Connection.CONNECTION, 100)
-        self.init()
-
-    def _logic(self):
-        elapsed_time = self._current_loop_time - self._last_loop_time
-
-        # update tank water level
-        tank_water_amount = self._get(TAG.TAG_TANK_LEVEL_VALUE) * PHYSICS.TANK_LEVEL_CAPACITY
-        if self._get(TAG.TAG_TANK_INPUT_VALVE_STATUS):
-            tank_water_amount += PHYSICS.TANK_INPUT_FLOW_RATE * elapsed_time
-
-        if self._get(TAG.TAG_TANK_OUTPUT_VALVE_STATUS):
-            tank_water_amount -= PHYSICS.TANK_OUTPUT_FLOW_RATE * elapsed_time
-
-        tank_water_level = tank_water_amount / PHYSICS.TANK_LEVEL_CAPACITY
-
-        if tank_water_level > PHYSICS.TANK_MAX_LEVEL:
-            tank_water_level = PHYSICS.TANK_MAX_LEVEL
-            self.report('tank water overflowed', logging.WARNING)
-        elif tank_water_level <= 0:
-            tank_water_level = 0
-            self.report('tank water is empty', logging.WARNING)
-
-        # update tank water flow
-        tank_water_flow = 0
-        if self._get(TAG.TAG_TANK_OUTPUT_VALVE_STATUS) and tank_water_amount > 0:
-            tank_water_flow = PHYSICS.TANK_OUTPUT_FLOW_RATE
-
-        # update bottle water
-        if self._get(TAG.TAG_BOTTLE_DISTANCE_TO_FILLER_VALUE) > 1:
-            bottle_water_amount = 0
-            if self._get(TAG.TAG_TANK_OUTPUT_FLOW_VALUE):
-                self.report('water is wasting', logging.WARNING)
-        else:
-            bottle_water_amount = self._get(TAG.TAG_BOTTLE_LEVEL_VALUE) * PHYSICS.BOTTLE_LEVEL_CAPACITY
-            bottle_water_amount += self._get(TAG.TAG_TANK_OUTPUT_FLOW_VALUE) * elapsed_time
-
-        bottle_water_level = bottle_water_amount / PHYSICS.BOTTLE_LEVEL_CAPACITY
-
-        if bottle_water_level > PHYSICS.BOTTLE_MAX_LEVEL:
-            bottle_water_level = PHYSICS.BOTTLE_MAX_LEVEL
-            self.report('bottle water overflowed', logging.WARNING)
-
-        # update bottle position
-        bottle_distance_to_filler = self._get(TAG.TAG_BOTTLE_DISTANCE_TO_FILLER_VALUE)
-        if self._get(TAG.TAG_CONVEYOR_BELT_ENGINE_STATUS):
-            bottle_distance_to_filler -= elapsed_time * PHYSICS.CONVEYOR_BELT_SPEED
-            bottle_distance_to_filler %= PHYSICS.BOTTLE_DISTANCE
-
-        # update physical properties
-        self._set(TAG.TAG_TANK_LEVEL_VALUE, tank_water_level)
-        self._set(TAG.TAG_TANK_OUTPUT_FLOW_VALUE, tank_water_flow)
-        self._set(TAG.TAG_BOTTLE_LEVEL_VALUE, bottle_water_level)
-        self._set(TAG.TAG_BOTTLE_DISTANCE_TO_FILLER_VALUE, bottle_distance_to_filler)
-
-    def init(self):
-        initial_list = []
-        for tag in TAG.TAG_LIST:
-            initial_list.append((tag, TAG.TAG_LIST[tag]['default']))
-
-        self._connector.initialize(initial_list)
-
-
-    @staticmethod
-    def recreate_connection():
-        return True
-
-
-if __name__ == '__main__':
-    factory = FactorySimulation()
-    factory.start()
-"""

@@ -47,7 +47,7 @@ class TAG:
     MACHINE_RESET = 'MachineReset'
  
     # New Working Tags
-    PRINTING_STICKER_TAG = 'PRINTING_STICKER'  # Indicates that a sticker is currently being printed and applied
+    PRINTING_STICKER_TAG = 'PRINTING_STICKER_TAG'  # Indicates that a sticker is currently being printed and applied
     BARCODE_VERIFICATION_STATUS = 'BARCODE_VERIFICATION_STATUS'  # Tracks whether the barcode has been verified
     PART_READY = 'PART_READY'  # Indicates that the part is in position and ready for the next operation
     CONVEYOR_STATUS = 'CONVEYOR_STATUS'  # Tracks whether the conveyor is running or stopped
@@ -59,7 +59,8 @@ class TAG:
     WAITING_FOR_STICKER = 'waiting_for_sticker'
  
     TAG_LIST = {
-        PART_PRESENT: {'id': 0, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
+        PRINTING_STICKER_TAG: {'id': 22, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 1},
+        PART_PRESENT: {'id': 0, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
         CUSTOMER_PART_NUMBER: {'id': 1, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
         MAHLE_PART_NUMBER: {'id': 2, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
         SERIAL_NUMBER: {'id': 3, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
@@ -77,11 +78,11 @@ class TAG:
         HMI_STATUSCODE: {'id': 15, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
         HMI_MESSAGE: {'id': 16, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
         MACHINE_RESET: {'id': 17, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
-        CONVEYOR_BELT_ENGINE_STATUS:{'id': 18, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 1},
+        CONVEYOR_BELT_ENGINE_STATUS:{'id': 18, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 1},
         CONVEYOR_BELT_ENGINE_MODE:{'id': 19, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 2},
         PART_DISTANCE_TO_SENSOR_VALUE:{'id': 20, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 5},
         WAITING_FOR_STICKER:{'id': 21, 'plc': 1, 'type': 'input', 'fault': 0.0, 'default': 0},
-        PRINTING_STICKER_TAG: {'id': 22, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
+        
         BARCODE_VERIFICATION_STATUS: {'id': 23, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 0},
         PART_READY: {'id': 24, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 1},
         CONVEYOR_STATUS: {'id': 25, 'plc': 1, 'type': 'output', 'fault': 0.0, 'default': 1},
